@@ -1,17 +1,27 @@
-type OutputComparisonTableProps = {
-    tokens: string[];
-};
+const rows = [
+    {
+        type: "Post-LN",
+        structure: "Attention → Add → LayerNorm → FFN → Add → LayerNorm",
+        note: "Useful for teaching the classic transformer flow.",
+    },
+    {
+        type: "Pre-LN",
+        structure: "LayerNorm → Attention → Add → LayerNorm → FFN → Add",
+        note: "Common in many modern large language model architectures.",
+    },
+];
 
-export function OutputComparisonTable({ tokens }: OutputComparisonTableProps) {
+export function ArchitectureComparisonCard() {
     return (
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h3 className="text-lg font-semibold text-slate-950">
-                Input vs Output Meaning
+                Pre-LN vs Post-LN
             </h3>
 
-            <p className="mt-2 text-sm text-slate-600">
-                This is a conceptual explanation. The output embedding is now more
-                context-aware after attention, residual connections, LayerNorm, and FFN.
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+                The same transformer block idea can be arranged in different ways. Your
+                visualizer teaches the Post-LN style first because it is easier for
+                beginners to follow.
             </p>
 
             <div className="mt-4 overflow-x-auto">
@@ -19,28 +29,28 @@ export function OutputComparisonTable({ tokens }: OutputComparisonTableProps) {
                     <thead>
                         <tr>
                             <th className="border border-slate-200 bg-slate-50 px-3 py-2 text-left">
-                                Token
+                                Type
                             </th>
                             <th className="border border-slate-200 bg-slate-50 px-3 py-2 text-left">
-                                Before Block
+                                Structure
                             </th>
                             <th className="border border-slate-200 bg-slate-50 px-3 py-2 text-left">
-                                After Block
+                                Note
                             </th>
                         </tr>
                     </thead>
 
                     <tbody>
-                        {tokens.map((token, index) => (
-                            <tr key={`${token}-${index}`}>
+                        {rows.map((row) => (
+                            <tr key={row.type}>
                                 <td className="border border-slate-200 px-3 py-2 font-medium text-slate-900">
-                                    {token}
+                                    {row.type}
+                                </td>
+                                <td className="border border-slate-200 px-3 py-2 font-mono text-xs text-slate-700">
+                                    {row.structure}
                                 </td>
                                 <td className="border border-slate-200 px-3 py-2 text-slate-700">
-                                    Basic standalone token representation
-                                </td>
-                                <td className="border border-slate-200 px-3 py-2 text-slate-700">
-                                    Context-aware representation after one transformer block
+                                    {row.note}
                                 </td>
                             </tr>
                         ))}

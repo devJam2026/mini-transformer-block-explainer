@@ -3,20 +3,32 @@
 import { useMemo, useState } from "react";
 import {
     attentionRows,
-    demoTokens,
-    inputEmbeddings,
-    outputEmbeddings,
     transformerBlockStages,
 } from "@/data/ai/miniTransformerBlock";
-import { EmbeddingMatrixViewer } from "@/components/transformer-block/EmbeddingMatrixViewer";
+import { ArchitectureComparisonCard } from "@/components/transformer-block/ArchitectureComparisonCard";
+import { MatrixStageComparison } from "@/components/transformer-block/MatrixStageComparison";
 import { OutputComparisonTable } from "@/components/transformer-block/OutputComparisonTable";
+import { PlaygroundControls } from "@/components/transformer-block/PlaygroundControls";
 import { StageInspector } from "@/components/transformer-block/StageInspector";
 import { TransformerPipelineDiagram } from "@/components/transformer-block/TransformerPipelineDiagram";
+import {
+    buildTransformerBlockDemo,
+    tokenizeSentence,
+} from "@/lib/transformerMath";
+import { StageVisualExplainer } from "@/components/transformer-block/StageVisualExplainer";
 
 export default function MiniTransformerBlockPage() {
+    const [sentence, setSentence] = useState("The cat sat");
     const [selectedStageId, setSelectedStageId] = useState(
         transformerBlockStages[0].id
     );
+
+    const tokens = useMemo(() => {
+        const parsedTokens = tokenizeSentence(sentence);
+        return parsedTokens.length > 0 ? parsedTokens : ["The", "cat", "sat"];
+    }, [sentence]);
+
+    const blockDemo = useMemo(() => buildTransformerBlockDemo(tokens), [tokens]);
 
     const selectedStage = useMemo(
         () =>
@@ -24,6 +36,54 @@ export default function MiniTransformerBlockPage() {
             transformerBlockStages[0],
         [selectedStageId]
     );
+
+    const selectedMatrices = useMemo(() => {
+        switch (selectedStageId) {
+            case "input-embeddings":
+                return [{ title: "Input Embeddings", matrix: blockDemo.input }];
+
+            case "multi-head-attention":
+                return [
+                    { title: "Input to Attention", matrix: blockDemo.input },
+                    { title: "Attention Output", matrix: blockDemo.attentionOutput },
+                ];
+
+            case "residual-1":
+                return [
+                    { title: "Input Embeddings", matrix: blockDemo.input },
+                    { title: "Attention Output", matrix: blockDemo.attentionOutput },
+                    { title: "Input + Attention Output", matrix: blockDemo.residualOne },
+                ];
+
+            case "layernorm-1":
+                return [
+                    { title: "Before First LayerNorm", matrix: blockDemo.residualOne },
+                    { title: "After First LayerNorm", matrix: blockDemo.layerNormOne },
+                ];
+
+            case "feed-forward-network":
+                return [
+                    { title: "Input to FFN", matrix: blockDemo.layerNormOne },
+                    { title: "FFN Output", matrix: blockDemo.ffnOutput },
+                ];
+
+            case "residual-2":
+                return [
+                    { title: "Input to FFN Residual", matrix: blockDemo.layerNormOne },
+                    { title: "FFN Output", matrix: blockDemo.ffnOutput },
+                    { title: "LayerNorm Output + FFN Output", matrix: blockDemo.residualTwo },
+                ];
+
+            case "layernorm-2":
+                return [
+                    { title: "Before Final LayerNorm", matrix: blockDemo.residualTwo },
+                    { title: "Final Block Output", matrix: blockDemo.output },
+                ];
+
+            default:
+                return [{ title: "Input Embeddings", matrix: blockDemo.input }];
+        }
+    }, [blockDemo, selectedStageId]);
 
     return (
         <main className="min-h-screen bg-slate-50 px-6 py-10 text-slate-900">
@@ -62,31 +122,37 @@ export default function MiniTransformerBlockPage() {
                 </div>
 
                 <div className="mt-8 grid gap-6 lg:grid-cols-[360px_1fr]">
-                    <aside className="lg:sticky lg:top-6 lg:self-start">
+                    <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
                         <TransformerPipelineDiagram
                             stages={transformerBlockStages}
                             selectedStageId={selectedStageId}
                             onSelectStage={setSelectedStageId}
                         />
+
+                        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                            <h3 className="font-semibold text-slate-950">
+                                Interview One-Liner
+                            </h3>
+                            <p className="mt-2 text-sm leading-6 text-slate-600">
+                                Attention lets tokens communicate, residuals preserve signal,
+                                LayerNorm stabilizes values, and FFN transforms each token
+                                independently.
+                            </p>
+                        </div>
                     </aside>
 
                     <section className="space-y-6">
+                        <PlaygroundControls
+                            sentence={sentence}
+                            onSentenceChange={setSentence}
+                            tokens={tokens}
+                        />
+
                         <StageInspector stage={selectedStage} />
 
-                        <div className="grid gap-6 xl:grid-cols-2">
-                            <EmbeddingMatrixViewer
-                                title="Input Token Embeddings"
-                                tokens={demoTokens}
-                                matrix={inputEmbeddings}
-                            />
+                        <StageVisualExplainer stageId={selectedStageId} />
 
-                            <EmbeddingMatrixViewer
-                                title="Output Embeddings After One Block"
-                                tokens={demoTokens}
-                                matrix={outputEmbeddings}
-                            />
-                        </div>
-
+                        <MatrixStageComparison tokens={tokens} stages={selectedMatrices} />
                         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                             <h3 className="text-lg font-semibold text-slate-950">
                                 Mini Attention Relationship
@@ -132,7 +198,9 @@ export default function MiniTransformerBlockPage() {
                             </div>
                         </div>
 
-                        <OutputComparisonTable tokens={demoTokens} />
+                        <OutputComparisonTable tokens={tokens} />
+
+                        <ArchitectureComparisonCard />
 
                         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                             <h3 className="text-lg font-semibold text-slate-950">
