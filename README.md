@@ -2,6 +2,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+chrome-extension://fdpohaocaechififmbbbbbknoalclacl/capture.html?id=118&url=http%3A%2F%2Flocalhost%3A3000%2Fmini-transformer-block
 First, run the development server:
 
 ```bash
